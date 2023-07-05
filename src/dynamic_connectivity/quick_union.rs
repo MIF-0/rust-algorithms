@@ -8,46 +8,51 @@ pub struct QuickUnion {
 }
 
 impl QuickUnion {
-    pub fn new(size: usize) -> impl UnionFind {
+    pub fn new(size: usize) -> Self {
         let mut objects: Vec<usize> = Vec::with_capacity(size);
         for i in 0..size {
             objects.push(i);
         }
-        return QuickUnion { objects };
+
+        QuickUnion { objects }
     }
 
     fn find_root(&self, object: &usize) -> Option<usize> {
-        let possible_parent = self.objects.get(object.clone());
-        return match possible_parent {
+        let possible_parent = self.objects.get(*object);
+
+        match possible_parent {
             None => None,
             Some(parent) => {
-                return if object == parent {
-                    Some(parent.clone())
+                if object == parent {
+                    Some(*parent)
                 } else {
                     self.find_root(parent)
                 }
             }
-        };
+        }
     }
 }
 
 impl UnionFind for QuickUnion {
     fn add(&mut self, object: usize) -> Result<(), AlgoError> {
-        if self.objects.get(object.clone()).is_some() {
+        if self.objects.get(object).is_some() {
             return Err(AlgoError::element_already_exist("object", &object));
         }
 
-        self.objects.insert(object.clone(), object);
-        return Ok(());
+        self.objects.insert(object, object);
+
+        Ok(())
     }
 
     fn union(&mut self, first: &usize, second: &usize) -> Result<(), AlgoError> {
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
-        return match (first_root, second_root) {
+
+        match (first_root, second_root) {
             (Some(f), Some(s)) => {
                 self.objects[f] = s;
-                return Ok(());
+
+                Ok(())
             }
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -57,13 +62,14 @@ impl UnionFind for QuickUnion {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 
     fn connected(&self, first: &usize, second: &usize) -> Result<bool, AlgoError> {
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
-        return match (first_root, second_root) {
+
+        match (first_root, second_root) {
             (Some(f), Some(s)) => Ok(f == s),
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -73,7 +79,7 @@ impl UnionFind for QuickUnion {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 }
 
@@ -86,11 +92,10 @@ impl Display for QuickUnion {
         // is very similar to `println!`.
         for (index, value) in self.objects.iter().enumerate() {
             let res = write!(f, "{}:{}, ", index, value);
-            if res.is_err() {
-                return res;
-            }
+            res?;
         }
-        return Ok(());
+
+        Ok(())
     }
 }
 

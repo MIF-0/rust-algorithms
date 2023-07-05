@@ -1,8 +1,8 @@
+pub mod path_compression_weighted_quick_union;
 pub mod quick_find;
 pub mod quick_union;
 pub mod union_find;
 pub mod weighted_quick_union;
-pub mod path_compression_weighted_quick_union;
 
 #[cfg(test)]
 mod test_utils {

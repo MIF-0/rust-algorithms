@@ -7,36 +7,38 @@ pub struct QuickFind {
 }
 
 impl QuickFind {
-    pub fn new(size: usize) -> impl UnionFind {
+    pub fn new(size: usize) -> Self {
         let mut objects: Vec<usize> = Vec::with_capacity(size);
         for i in 0..size {
             objects.push(i);
         }
-        return QuickFind { objects };
+        QuickFind { objects }
     }
 }
 
 impl UnionFind for QuickFind {
     fn add(&mut self, object: usize) -> Result<(), AlgoError> {
-        if self.objects.get(object.clone()).is_some() {
+        if self.objects.get(object).is_some() {
             return Err(AlgoError::element_already_exist("object", &object));
         }
 
-        self.objects.insert(object.clone(), object);
-        return Ok(());
+        self.objects.insert(object, object);
+
+        Ok(())
     }
 
     fn union(&mut self, first: &usize, second: &usize) -> Result<(), AlgoError> {
-        let first_id = self.objects.get(first.clone()).map(|v| v.clone());
-        let second_id = self.objects.get(second.clone()).map(|v| v.clone());
-        return match (first_id, second_id) {
+        let first_id = self.objects.get(*first).copied();
+        let second_id = self.objects.get(*second).copied();
+
+        match (first_id, second_id) {
             (Some(f), Some(s)) => {
                 for value in self.objects.iter_mut() {
                     if value == &f {
-                        *value = s.clone();
+                        *value = s;
                     }
                 }
-                return Ok(());
+                Ok(())
             }
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -46,13 +48,14 @@ impl UnionFind for QuickFind {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 
     fn connected(&self, first: &usize, second: &usize) -> Result<bool, AlgoError> {
-        let first_id = self.objects.get(first.clone());
-        let second_id = self.objects.get(second.clone());
-        return match (first_id, second_id) {
+        let first_id = self.objects.get(*first);
+        let second_id = self.objects.get(*second);
+
+        match (first_id, second_id) {
             (Some(f), Some(s)) => Ok(f == s),
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -62,7 +65,7 @@ impl UnionFind for QuickFind {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 }
 
@@ -75,11 +78,10 @@ impl fmt::Display for QuickFind {
         // is very similar to `println!`.
         for (index, value) in self.objects.iter().enumerate() {
             let res = write!(f, "{}:{}, ", index, value);
-            if res.is_err() {
-                return res;
-            }
+            res?;
         }
-        return Ok(());
+
+        Ok(())
     }
 }
 

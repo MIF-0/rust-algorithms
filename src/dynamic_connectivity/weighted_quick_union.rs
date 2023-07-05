@@ -11,56 +11,60 @@ pub struct WeightedQuickUnion {
 }
 
 impl WeightedQuickUnion {
-    pub fn new(size: usize) -> impl UnionFind {
-        let mut objects: Vec<usize> = Vec::with_capacity(size.clone());
-        let mut sizes: Vec<usize> = Vec::with_capacity(size.clone());
+    pub fn new(size: usize) -> Self {
+        let mut objects: Vec<usize> = Vec::with_capacity(size);
+        let mut sizes: Vec<usize> = Vec::with_capacity(size);
         for i in 0..size {
             objects.push(i);
             sizes.push(1);
         }
-        return WeightedQuickUnion { objects, sizes };
+
+        WeightedQuickUnion { objects, sizes }
     }
 
     fn find_root(&self, object: &usize) -> Option<usize> {
-        let possible_parent = self.objects.get(object.clone());
-        return match possible_parent {
+        let possible_parent = self.objects.get(*object);
+
+        match possible_parent {
             None => None,
             Some(parent) => {
-                return if object == parent {
-                    Some(parent.clone())
+                if object == parent {
+                    Some(*parent)
                 } else {
                     self.find_root(parent)
                 }
             }
-        };
+        }
     }
 }
 
 impl UnionFind for WeightedQuickUnion {
     fn add(&mut self, object: usize) -> Result<(), AlgoError> {
-        if self.objects.get(object.clone()).is_some() {
+        if self.objects.get(object).is_some() {
             return Err(AlgoError::element_already_exist("object", &object));
         }
 
-        self.objects.insert(object.clone(), object.clone());
-        self.sizes.insert(object.clone(), 1);
-        return Ok(());
+        self.objects.insert(object, object);
+        self.sizes.insert(object, 1);
+
+        Ok(())
     }
 
     fn union(&mut self, first: &usize, second: &usize) -> Result<(), AlgoError> {
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
-        return match (first_root, second_root) {
+
+        match (first_root, second_root) {
             (Some(f), Some(s)) => {
-                if self.sizes[f.clone()] < self.sizes[s.clone()] {
-                    self.objects[f.clone()] = s.clone();
-                    self.sizes[s.clone()] += self.sizes[f.clone()].clone()
+                if self.sizes[f] < self.sizes[s] {
+                    self.objects[f] = s;
+                    self.sizes[s] += self.sizes[f]
                 } else {
-                    self.objects[s.clone()] = f.clone();
-                    self.sizes[f.clone()] += self.sizes[s.clone()].clone()
+                    self.objects[s] = f;
+                    self.sizes[f] += self.sizes[s]
                 }
 
-                return Ok(());
+                Ok(())
             }
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -70,13 +74,14 @@ impl UnionFind for WeightedQuickUnion {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 
     fn connected(&self, first: &usize, second: &usize) -> Result<bool, AlgoError> {
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
-        return match (first_root, second_root) {
+
+        match (first_root, second_root) {
             (Some(f), Some(s)) => Ok(f == s),
             (None, None) => Err(AlgoError::missing_elements(
                 "first object",
@@ -86,7 +91,7 @@ impl UnionFind for WeightedQuickUnion {
             )),
             (None, _) => Err(AlgoError::missing_element("first object", first)),
             (_, None) => Err(AlgoError::missing_element("second object", second)),
-        };
+        }
     }
 }
 
@@ -99,11 +104,10 @@ impl Display for WeightedQuickUnion {
         // is very similar to `println!`.
         for (index, value) in self.objects.iter().enumerate() {
             let res = write!(f, "{}:{}, ", index, value);
-            if res.is_err() {
-                return res;
-            }
+            res?;
         }
-        return Ok(());
+
+        Ok(())
     }
 }
 
@@ -111,10 +115,10 @@ impl Display for WeightedQuickUnion {
 mod tests {
     use crate::dynamic_connectivity::test_utils::down_cast;
     use crate::dynamic_connectivity::union_find::UnionFind;
+    use crate::dynamic_connectivity::weighted_quick_union::WeightedQuickUnion;
     use easy_assert::bool_assertions::BooleanAssert;
     use easy_assert::list_assertions::ListAssert;
     use easy_assert::{actual_vec, expected_vec};
-    use crate::dynamic_connectivity::weighted_quick_union::WeightedQuickUnion;
 
     #[test]
     fn init_correctly() {

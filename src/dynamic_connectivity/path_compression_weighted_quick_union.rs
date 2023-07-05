@@ -10,70 +10,73 @@ pub struct PathCompressionWeightedQuickUnion {
 }
 
 impl PathCompressionWeightedQuickUnion {
-
     pub fn new(size: usize) -> PathCompressionWeightedQuickUnion {
-        let mut objects: Vec<usize> = Vec::with_capacity(size.clone());
-        let mut sizes: Vec<usize> = Vec::with_capacity(size.clone());
+        let mut objects: Vec<usize> = Vec::with_capacity(size);
+        let mut sizes: Vec<usize> = Vec::with_capacity(size);
         for i in 0..size {
             objects.push(i);
             sizes.push(1);
         }
-        return PathCompressionWeightedQuickUnion { objects, sizes };
+
+        PathCompressionWeightedQuickUnion { objects, sizes }
     }
 
     fn find_root(&mut self, object: &usize) -> usize {
-        let mut current = object.clone();
-        while current.clone() != self.objects[current.clone()] {
-            let parent = self.objects[current.clone()].clone();
-            self.objects[current.clone()] = self.objects[parent.clone()].clone();
+        let mut current = *object;
+        while current != self.objects[current] {
+            let parent = self.objects[current];
+            self.objects[current] = self.objects[parent];
             current = parent;
         }
-        return current;
+
+        current
     }
 
     pub fn add(&mut self, object: usize) -> Result<(), AlgoError> {
-        if self.objects.get(object.clone()).is_some() {
+        if self.objects.get(object).is_some() {
             return Err(AlgoError::element_already_exist("object", &object));
         }
 
-        self.objects.insert(object.clone(), object.clone());
-        self.sizes.insert(object.clone(), 1);
-        return Ok(());
+        self.objects.insert(object, object);
+        self.sizes.insert(object, 1);
+
+        Ok(())
     }
 
     pub fn union(&mut self, first: &usize, second: &usize) -> Result<(), AlgoError> {
-        if self.objects.get(first.clone()).is_none() {
+        if self.objects.get(*first).is_none() {
             return Err(AlgoError::missing_element("first object", first));
         }
-        if self.objects.get(second.clone()).is_none() {
+        if self.objects.get(*second).is_none() {
             return Err(AlgoError::missing_element("second object", second));
         }
 
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
 
-        if self.sizes[first_root.clone()] < self.sizes[second_root.clone()] {
-            self.objects[first_root.clone()] = second_root.clone();
-            self.sizes[second_root.clone()] += self.sizes[first_root.clone()].clone()
+        if self.sizes[first_root] < self.sizes[second_root] {
+            self.objects[first_root] = second_root;
+            self.sizes[second_root] += self.sizes[first_root]
         } else {
-            self.objects[second_root.clone()] = first_root.clone();
-            self.sizes[first_root.clone()] += self.sizes[second_root.clone()].clone()
+            self.objects[second_root] = first_root;
+            self.sizes[first_root] += self.sizes[second_root]
         }
 
-        return Ok(());
+        Ok(())
     }
 
     pub fn connected(&mut self, first: &usize, second: &usize) -> Result<bool, AlgoError> {
-        if self.objects.get(first.clone()).is_none() {
+        if self.objects.get(*first).is_none() {
             return Err(AlgoError::missing_element("first object", first));
         }
-        if self.objects.get(second.clone()).is_none() {
+        if self.objects.get(*second).is_none() {
             return Err(AlgoError::missing_element("second object", second));
         }
 
         let first_root = self.find_root(first);
         let second_root = self.find_root(second);
-        return Ok(first_root == second_root);
+
+        Ok(first_root == second_root)
     }
 }
 
@@ -86,20 +89,19 @@ impl Display for PathCompressionWeightedQuickUnion {
         // is very similar to `println!`.
         for (index, value) in self.objects.iter().enumerate() {
             let res = write!(f, "{}:{}, ", index, value);
-            if res.is_err() {
-                return res;
-            }
+            res?;
         }
-        return Ok(());
+
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::dynamic_connectivity::path_compression_weighted_quick_union::PathCompressionWeightedQuickUnion;
     use easy_assert::bool_assertions::BooleanAssert;
     use easy_assert::list_assertions::ListAssert;
     use easy_assert::{actual_vec, expected_vec};
-    use crate::dynamic_connectivity::path_compression_weighted_quick_union::PathCompressionWeightedQuickUnion;
 
     #[test]
     fn init_correctly() {
