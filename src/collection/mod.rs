@@ -1,5 +1,6 @@
+pub mod dequeue;
 pub mod different_linked_list;
-pub mod first_attempt_linked_list;
+pub mod simple_linked_list;
 pub mod stack;
 
 pub trait Collection {

@@ -102,14 +102,14 @@ impl<T> Stack<T> for LinkedList<T> {
         self.size += 1;
     }
 
-    fn pop(&mut self) -> T {
+    fn pop(&mut self) -> Option<T> {
         todo!()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::collection::first_attempt_linked_list::LinkedList;
+    use crate::collection::different_linked_list::first_attempt_linked_list::LinkedList;
     use crate::collection::stack::Stack;
 
     #[test]
