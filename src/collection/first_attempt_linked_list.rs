@@ -102,7 +102,7 @@ impl<T> Stack<T> for LinkedList<T> {
         self.size += 1;
     }
 
-    fn pop(&mut self) -> T {
+    fn pop(&mut self) -> Option<T> {
         todo!()
     }
 }
