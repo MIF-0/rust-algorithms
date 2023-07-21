@@ -6,6 +6,7 @@ use AlgoError::ElementAlreadyExist;
 
 pub mod collection;
 pub mod dynamic_connectivity;
+pub mod sort;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
