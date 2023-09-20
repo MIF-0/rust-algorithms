@@ -1,9 +1,9 @@
-use std::fmt::Debug;
 use rand::Rng;
+use std::fmt::Debug;
 
 pub fn shuffle<T>(mut array: Vec<T>) -> Vec<T>
-    where
-        T: Ord + Debug,
+where
+    T: Ord + Debug,
 {
     let mut rng = rand::thread_rng();
     for index in 0..array.len() {
