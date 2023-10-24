@@ -1,5 +1,6 @@
 pub mod dequeue;
 pub mod different_linked_list;
+pub mod simple_binary_heap;
 pub mod simple_linked_list;
 pub mod stack;
 
