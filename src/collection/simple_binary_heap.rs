@@ -16,6 +16,21 @@ where
             elements: Vec::new(),
         }
     }
+
+    pub fn from(elements: Vec<T>) -> SimpleBinaryHeap<T> {
+        let mut heap = SimpleBinaryHeap { elements };
+        let mut i = heap.elements.len() / 2;
+        loop {
+            heap.sink_till(i, None);
+            if i == 0 {
+                break;
+            }
+            i -= 1;
+        }
+
+        heap
+    }
+
     pub fn add(&mut self, elem: T) {
         self.elements.push(elem);
         self.pop_up(self.elements.len() - 1);
@@ -23,13 +38,27 @@ where
 
     pub fn delete_max(&mut self) -> T {
         let removed = self.elements.swap_remove(0);
-        self.sink(0);
+        self.sink_till(0, None);
 
         removed
     }
 
     pub fn delete_min(&mut self) -> T {
         self.elements.remove(self.elements.len() - 1)
+    }
+
+    pub fn sort(mut self) -> Vec<T> {
+        let mut count = self.elements.len() - 1;
+        loop {
+            if count == 0 {
+                break;
+            }
+            self.elements.swap(0, count);
+            self.sink_till(0, Some(count - 1));
+            count -= 1;
+        }
+
+        self.elements
     }
 
     fn pop_up(&mut self, index: usize) {
@@ -45,7 +74,7 @@ where
         }
     }
 
-    fn sink(&mut self, index: usize) {
+    fn sink_till(&mut self, index: usize, till: Option<usize>) {
         if index >= self.elements.len() {
             return;
         }
@@ -53,33 +82,47 @@ where
         let left_child_index = SimpleBinaryHeap::<T>::left_child_index_for(index);
         let right_child_index = SimpleBinaryHeap::<T>::right_child_index_for(index);
 
-        let left_child = self.elements.get(left_child_index);
-        let right_child = self.elements.get(right_child_index);
+        let mut left_child = self.elements.get(left_child_index);
+        let mut right_child = self.elements.get(right_child_index);
+        if let Some(till_index) = till {
+            if left_child_index >= till_index {
+                left_child = None
+            }
+            if right_child_index >= till_index {
+                right_child = None
+            }
+        }
+
         let current = &self.elements[index];
         match (left_child, right_child) {
             (Some(left_child), Some(right_child)) => {
                 if left_child.gt(right_child) {
-                    self.swap_if_child_gt(index, left_child_index);
+                    self.swap_if_child_gt(index, left_child_index, till);
                 } else if right_child.gt(current) {
-                    self.swap_if_child_gt(index, right_child_index);
+                    self.swap_if_child_gt(index, right_child_index, till);
                 }
             }
             (Some(_), None) => {
-                self.swap_if_child_gt(index, left_child_index);
+                self.swap_if_child_gt(index, left_child_index, till);
             }
             (None, Some(_)) => {
-                self.swap_if_child_gt(index, right_child_index);
+                self.swap_if_child_gt(index, right_child_index, till);
             }
             (None, None) => {}
         }
     }
 
-    fn swap_if_child_gt(&mut self, current_index: usize, child_index: usize) {
+    fn swap_if_child_gt(
+        &mut self,
+        current_index: usize,
+        child_index: usize,
+        sink_till: Option<usize>,
+    ) {
         let current = &self.elements[current_index];
         let child = &self.elements[child_index];
         if child.gt(current) {
             self.elements.swap(current_index, child_index);
-            self.sink(child_index);
+            self.sink_till(child_index, sink_till);
         }
     }
 
@@ -91,6 +134,7 @@ where
         (index * 2) + 2
     }
 }
+
 impl<T> Default for SimpleBinaryHeap<T>
 where
     T: Ord + Debug,
@@ -215,9 +259,36 @@ mod test {
         ListAssert::assert_that(actual_vec(binary_heap.elements))
             .with_element_matcher(|a, b| a.eq(b))
             .is_equal_to(expected_vec(vec![
-                "S", "R", "O", "N", "P", "G", "A", "E", "I","H"
+                "S", "R", "O", "N", "P", "G", "A", "E", "I", "H",
             ]))
             .in_order();
+    }
 
+    #[test]
+    fn basics_from() {
+        let array = vec!["S", "O", "R", "T", "E", "X", "A", "M", "P", "L", "E"];
+
+        let binary_heap: SimpleBinaryHeap<&str> = SimpleBinaryHeap::from(array);
+
+        ListAssert::assert_that(actual_vec(binary_heap.elements))
+            .with_element_matcher(|a, b| a.eq(b))
+            .is_equal_to(expected_vec(vec![
+                "X", "T", "S", "P", "L", "R", "A", "M", "O", "E", "E",
+            ]))
+            .in_order();
+    }
+
+    #[test]
+    fn basics_sort() {
+        let array = vec!["S", "O", "R", "T", "E", "X", "A", "M", "P", "L", "E"];
+
+        let binary_heap: SimpleBinaryHeap<&str> = SimpleBinaryHeap::from(array);
+        let sorted = binary_heap.sort();
+        ListAssert::assert_that(actual_vec(sorted))
+            .with_element_matcher(|a, b| a.eq(b))
+            .is_equal_to(expected_vec(vec![
+                "A", "E", "E", "L", "M", "O", "P", "R", "S", "T", "X",
+            ]))
+            .in_order();
     }
 }
