@@ -1,3 +1,4 @@
+pub mod binary_search_symbol_table;
 pub mod dequeue;
 pub mod different_linked_list;
 pub mod simple_binary_heap;
