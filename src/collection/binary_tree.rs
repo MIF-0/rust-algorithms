@@ -89,6 +89,78 @@ where
         self.length += 1;
     }
 
+    pub fn min(&self) -> Option<&V> {
+        return match self.root {
+            None => None,
+            Some(root_link) => unsafe {
+                let current = Self::find_min(root_link);
+                Some(&current.value)
+            },
+        };
+    }
+
+    unsafe fn find_min<'a>(root_link: NonNull<Node<K, V>>) -> &'a Node<K, V> {
+        let mut current = root_link.as_ref();
+        while current.left.is_some() {
+            match current.left {
+                None => {
+                    break;
+                }
+                Some(link) => {
+                    current = link.as_ref();
+                }
+            }
+        }
+        current
+    }
+
+    pub fn max(&self) -> Option<&V> {
+        unsafe {
+            match self.root {
+                None => None,
+                Some(root_link) => {
+                    let mut current = &(*root_link.as_ptr());
+                    while current.right.is_some() {
+                        match current.right {
+                            None => {
+                                break;
+                            }
+                            Some(link) => {
+                                current = &(*link.as_ptr());
+                            }
+                        }
+                    }
+                    Some(&current.value)
+                }
+            }
+        }
+    }
+
+    pub fn delete_min(&mut self) {
+        if self.root.is_none() {
+            return;
+        }
+
+        unsafe {
+            self.root = Self::_delete_min(self.root);
+        }
+    }
+
+    unsafe fn _delete_min(link: Link<K, V>) -> Link<K, V> {
+        match link {
+            None => None,
+            Some(root) => {
+                let root_ref = root.as_ptr();
+                if (*root_ref).left.is_none() {
+                    let v = Box::from_raw(root_ref);
+                    return v.right;
+                }
+                (*root_ref).left = Self::_delete_min((*root_ref).left);
+                link
+            }
+        }
+    }
+
     pub fn clean(&mut self) {
         BinarySearchTree::remove_tree(self.root.take())
     }
@@ -234,5 +306,61 @@ mod test {
         StringAssert::assert_that(actual(result.to_string()))
             .is_equal()
             .to(expected("K".to_string()));
+    }
+
+    #[test]
+    fn basics_min() {
+        let mut tree: BinarySearchTree<usize, &str> = BinarySearchTree::new();
+        tree.put(10, "T");
+        tree.put(4, "D");
+        tree.put(1, "A");
+        tree.put(7, "K");
+
+        let result = tree.min().copied().unwrap_or("IT IS EMPTY");
+
+        StringAssert::assert_that(actual(result.to_string()))
+            .is_equal()
+            .to(expected("A".to_string()));
+    }
+
+    #[test]
+    fn basics_max() {
+        let mut tree: BinarySearchTree<usize, &str> = BinarySearchTree::new();
+        tree.put(10, "T");
+        tree.put(4, "D");
+        tree.put(1, "A");
+        tree.put(7, "K");
+
+        let result = tree.max().copied().unwrap_or("IT IS EMPTY");
+
+        StringAssert::assert_that(actual(result.to_string()))
+            .is_equal()
+            .to(expected("T".to_string()));
+    }
+
+    #[test]
+    fn basics_delete_min() {
+        // GIVEN
+        let mut tree: BinarySearchTree<usize, &str> = BinarySearchTree::new();
+        tree.put(10, "T");
+        tree.put(4, "D");
+        tree.put(1, "A");
+        tree.put(7, "K");
+
+        let result = tree.min().copied().unwrap_or("IT IS EMPTY");
+
+        StringAssert::assert_that(actual(result.to_string()))
+            .is_equal()
+            .to(expected("A".to_string()));
+
+        // WHEN
+        tree.delete_min();
+
+        // THEN
+        let result = tree.min().copied().unwrap_or("IT IS EMPTY");
+
+        StringAssert::assert_that(actual(result.to_string()))
+            .is_equal()
+            .to(expected("D".to_string()));
     }
 }
